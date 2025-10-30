@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Card, Spinner, Alert, Container, Row, Col, Button } from "react-bootstrap";
 import "../styles/Dashboard.css";
 
 function Dashboard() {
+  const navigate = useNavigate()
   const [lots, setLots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -54,7 +56,9 @@ function Dashboard() {
                   Available Spots:{" "}
                   <strong>{lot.available_spots}</strong> / {lot.total_spots}
                 </Card.Text>
-                <Button variant="success">Book Now</Button>
+                <Button variant="success"
+                 onClick={() => navigate(`/book/${lot.lot_id}`)} 
+                >Book Now</Button>
               </Card.Body>
             </Card>
           </Col>

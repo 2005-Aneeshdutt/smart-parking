@@ -36,7 +36,7 @@ function Login() {
       setMessage({ type: "success", text: `Welcome ${res.data.name}!` });
 
     
-      setTimeout(() => navigate("/parking"), 1000);
+      setTimeout(() => navigate("/dashboard"), 1000);
     } catch (err) {
       setMessage({
         type: "danger",

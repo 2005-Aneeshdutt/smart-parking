@@ -5,7 +5,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext1";
 import Login from "./components/Login";
 import Dashboard from "./components/Dashboard"; 
 import "bootstrap/dist/css/bootstrap.min.css";
-
+import BookPage from "./components/BookPage";
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -23,6 +23,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/book/:lot_id"
+            element={
+              <ProtectedRoute>
+                <BookPage />
               </ProtectedRoute>
             }
           />
