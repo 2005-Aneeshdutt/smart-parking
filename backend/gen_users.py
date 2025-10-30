@@ -5,7 +5,7 @@ import bcrypt
 DB = {
     "host": "localhost",
     "user": "root",
-    "password": "2005Nag$",
+    "password": "",
     "database": "smart_parking_database_1"
 }
 
