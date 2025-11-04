@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Container, Card, Button, Spinner, Alert, Form } from "react-bootstrap";
+import { Container, Card, Button, Spinner, Alert, Form, Badge } from "react-bootstrap";
 import "../styles/BookPage.css";
 import { useAuth } from "../context/AuthContext1";
 
@@ -14,6 +14,8 @@ function BookPage() {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [bookingStatus, setBookingStatus] = useState("");
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingDetails, setBookingDetails] = useState(null);
   const navigate = useNavigate();
 
   
@@ -44,6 +46,10 @@ function BookPage() {
       return;
     }
 
+    setIsBooking(true);
+    setBookingStatus("");
+    setBookingDetails(null);
+
     try {
       const bookingData = {
         user_id: user.user_id, 
@@ -52,18 +58,23 @@ function BookPage() {
         end_time: endTime
       };
 
-      console.log("Booking data being sent:", bookingData);
-
       const res = await axios.post("http://127.0.0.1:8000/parking/book", bookingData);
 
-      console.log("Booking response:", res.data);
-      setBookingStatus("Booking successful!");
+      setBookingDetails(res.data.booking_summary);
+      setBookingStatus("success");
 
-      
-      setTimeout(() => navigate("/dashboard"), 1500);
+      // Redirect after 2 seconds to show success message, and switch to bookings tab
+      setTimeout(() => {
+        navigate("/dashboard?refresh=" + Date.now() + "&tab=bookings", { replace: true });
+      }, 2000);
     } catch (err) {
       console.error("Booking failed:", err);
-      setBookingStatus(err.response?.data?.detail || "Booking failed. Please try again.");
+      setBookingStatus("error");
+      setBookingDetails({
+        error: err.response?.data?.detail || "Booking failed. Please try again."
+      });
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -84,51 +95,94 @@ function BookPage() {
 
   
   return (
-    <Container className="mt-5 d-flex justify-content-center">
-      <Card style={{ width: "28rem" }} className="shadow p-4 text-center">
-        <Card.Body>
-          <Card.Title className="fw-bold mb-3">{lot.lot_name}</Card.Title>
-          <Card.Text>{lot.location}</Card.Text>
-          <Card.Text>
-            Available Spots: {lot.available_spots} / {lot.total_spots}
-          </Card.Text>
-          <Card.Text>Rate: ₹{lot.hourly_rate} per hour</Card.Text>
+    <div className="book-page">
+      <Container className="d-flex justify-content-center align-items-center">
+        <Card className="book-card shadow-lg p-5">
+          <Card.Body>
+            <div className="text-center mb-4">
+              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🅿️</div>
+              <Card.Title>{lot.lot_name}</Card.Title>
+              <Card.Text className="text-muted">📍 {lot.location}</Card.Text>
+              <div className="mt-3 mb-3">
+                <Badge bg="info" className="me-2">
+                  Available: {lot.available_spots} / {lot.total_spots}
+                </Badge>
+                <Badge bg="success">₹{lot.hourly_rate} per hour</Badge>
+              </div>
+            </div>
 
-          {/* Start & End Time Inputs */}
-          <Form className="text-start mt-3">
-            <Form.Group className="mb-3">
-              <Form.Label>Start Time</Form.Label>
-              <Form.Control
-                type="datetime-local"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>End Time</Form.Label>
-              <Form.Control
-                type="datetime-local"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-              />
-            </Form.Group>
-          </Form>
+            {/* Start & End Time Inputs */}
+            <Form className="mt-4" onSubmit={(e) => { e.preventDefault(); handleBooking(); }}>
+              <Form.Group className="mb-3">
+                <Form.Label>Start Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  min={new Date().toISOString().slice(0, 16)}
+                  required
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>End Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  min={startTime || new Date().toISOString().slice(0, 16)}
+                  required
+                />
+              </Form.Group>
+            
+            <div className="button-group">
+              <Button 
+                variant="success" 
+                type="submit"
+                className="flex-fill"
+                disabled={isBooking}
+              >
+                {isBooking ? (
+                  <>
+                    <Spinner size="sm" animation="border" className="me-2" />
+                    Booking...
+                  </>
+                ) : (
+                  "Confirm Booking"
+                )}
+              </Button>
+              <Button 
+                variant="secondary" 
+                type="button"
+                onClick={() => navigate("/dashboard")} 
+                className="flex-fill"
+                disabled={isBooking}
+              >
+                Cancel
+              </Button>
+            </div>
+            </Form>
 
-          <Button variant="success" className="me-2" onClick={handleBooking}>
-            Confirm Booking
-          </Button>
-          <Button variant="secondary" onClick={() => navigate("/dashboard")}>
-            Cancel
-          </Button>
+            {bookingStatus === "success" && bookingDetails && (
+              <Alert variant="success" className="mt-3">
+                <Alert.Heading>✅ Booking Successful!</Alert.Heading>
+                <hr />
+                <p className="mb-1"><strong>Total Cost:</strong> ₹{bookingDetails.total_cost}</p>
+                <p className="mb-1"><strong>Start Time:</strong> {new Date(bookingDetails.start_time).toLocaleString()}</p>
+                <p className="mb-0"><strong>End Time:</strong> {new Date(bookingDetails.end_time).toLocaleString()}</p>
+                <p className="mt-2 mb-0"><small>Redirecting to dashboard...</small></p>
+              </Alert>
+            )}
 
-          {bookingStatus && (
-            <Alert variant="info" className="mt-3">
-              {bookingStatus}
-            </Alert>
-          )}
-        </Card.Body>
-      </Card>
-    </Container>
+            {bookingStatus === "error" && bookingDetails && (
+              <Alert variant="danger" className="mt-3">
+                <Alert.Heading>❌ Booking Failed</Alert.Heading>
+                <p className="mb-0">{bookingDetails.error}</p>
+              </Alert>
+            )}
+          </Card.Body>
+        </Card>
+      </Container>
+    </div>
   );
 }
 

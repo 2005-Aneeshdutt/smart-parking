@@ -27,6 +27,7 @@ function Login() {
       const userData = {
         user_id: res.data.user_id,
         name: res.data.name,
+        role: res.data.role || "driver",
       };
 
   
@@ -36,7 +37,8 @@ function Login() {
       setMessage({ type: "success", text: `Welcome ${res.data.name}!` });
 
     
-      setTimeout(() => navigate("/dashboard"), 1000);
+      const redirectPath = userData.role === "admin" ? "/admin" : "/dashboard";
+      setTimeout(() => navigate(redirectPath), 1000);
     } catch (err) {
       setMessage({
         type: "danger",
@@ -49,8 +51,10 @@ function Login() {
 
   return (
     <div className="login-container d-flex justify-content-center align-items-center">
-      <Card className="login-card shadow-lg p-4">
-        <h3 className="text-center mb-3 text-primary">Parking System Login</h3>
+      <Card className="login-card shadow-lg p-5">
+        <div className="login-icon">🅿️</div>
+        <h3 className="text-center mb-4 text-primary">Smart Parking System</h3>
+        <p className="text-center text-muted mb-4">Sign in to continue</p>
         <Form onSubmit={handleSubmit}>
           <Form.Group className="mb-3">
             <Form.Label>Email</Form.Label>

@@ -1,35 +1,85 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import { Card, Spinner, Alert, Container, Row, Col, Button } from "react-bootstrap";
+import { Card, Spinner, Alert, Container, Row, Col, Button, Badge, Table } from "react-bootstrap";
+import { useAuth } from "../context/AuthContext1";
 import "../styles/Dashboard.css";
 
 function Dashboard() {
-  const navigate = useNavigate()
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [lots, setLots] = useState([]);
+  const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("lots");
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const fetchLots = async () => {
+    try {
+      const res = await axios.get("http://127.0.0.1:8000/parking/lots");
+      setLots(res.data.parking_lots);
+    } catch (err) {
+      setError("Failed to load parking lots");
+    }
+  };
+
+  const fetchBookings = async () => {
+    if (!user?.user_id) return;
+    try {
+      const res = await axios.get(`http://127.0.0.1:8000/parking/bookings/${user.user_id}`);
+      console.log("Bookings fetched:", res.data.bookings);
+      setBookings(res.data.bookings || []);
+    } catch (err) {
+      console.error("Failed to load bookings:", err.response?.data || err.message);
+      setBookings([]); // Set empty array on error
+    }
+  };
 
   useEffect(() => {
-    const fetchLots = async () => {
-      try {
-        const res = await axios.get("http://127.0.0.1:8000/parking/lots");
-        setLots(res.data.parking_lots);
-      } catch (err) {
-        setError("Failed to load parking lots");
-      } finally {
-        setLoading(false);
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([fetchLots(), fetchBookings()]);
+      setLoading(false);
+    };
+    loadData();
+    
+    // Check if tab is specified in URL
+    const params = new URLSearchParams(location.search);
+    const tabParam = params.get("tab");
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [user, location.search]); // Refresh when location changes (including query params)
+
+  // Refresh data when component mounts or when navigating back
+  useEffect(() => {
+    const handleFocus = () => {
+      fetchLots();
+      fetchBookings();
+    };
+    window.addEventListener('focus', handleFocus);
+    
+    // Also refresh when component becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchLots();
+        fetchBookings();
       }
     };
-    fetchLots();
-  }, []);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user]);
 
   if (loading)
     return (
-      <div className="text-center mt-5">
-        <Spinner animation="border" /> Loading parking lots...
+      <div className="dashboard-loading">
+        <Spinner animation="border" variant="primary" />
+        <p>Loading parking lots...</p>
       </div>
     );
 
@@ -41,30 +91,192 @@ function Dashboard() {
     );
 
   return (
-    <Container className="mt-4">
-      <h2 className="text-center mb-4 text-primary">
-        Welcome {user?.name || "User"} 👋
-      </h2>
-      <Row>
-        {lots.map((lot) => (
-          <Col md={4} key={lot.lot_id} className="mb-4">
-            <Card className="shadow-lg p-3 text-center lot-card">
-              <Card.Body>
-                <Card.Title className="fw-bold">{lot.lot_name}</Card.Title>
-                <Card.Text>{lot.location}</Card.Text>
-                <Card.Text>
-                  Available Spots:{" "}
-                  <strong>{lot.available_spots}</strong> / {lot.total_spots}
-                </Card.Text>
-                <Button variant="success"
-                 onClick={() => navigate(`/book/${lot.lot_id}`)} 
-                >Book Now</Button>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </Container>
+    <div className="dashboard-wrapper">
+      <div className="dashboard-header">
+        <Container fluid>
+          <Row className="align-items-center">
+            <Col>
+              <h2 className="mb-0">
+                <span className="dashboard-icon">🅿️</span> Smart Parking System
+              </h2>
+              <p className="text-muted mb-0">Welcome, {user?.name || "User"}</p>
+            </Col>
+            <Col xs="auto" className="d-flex gap-2">
+              {user?.role === "admin" && (
+                <Button
+                  variant="outline-primary"
+                  onClick={() => navigate("/admin")}
+                >
+                  Admin Dashboard
+                </Button>
+              )}
+              <Button variant="outline-danger" onClick={logout}>
+                Logout
+              </Button>
+            </Col>
+          </Row>
+        </Container>
+      </div>
+
+      <Container className="mt-4">
+        {/* Tabs */}
+        <div className="mb-4 text-center">
+          <Button
+            variant={activeTab === "lots" ? "primary" : "outline-primary"}
+            onClick={() => setActiveTab("lots")}
+            className="me-2"
+          >
+            🅿️ Parking Lots
+          </Button>
+          <Button
+            variant={activeTab === "bookings" ? "primary" : "outline-primary"}
+            onClick={() => setActiveTab("bookings")}
+          >
+            📅 My Bookings
+          </Button>
+        </div>
+
+        {/* Parking Lots Tab */}
+        {activeTab === "lots" && (
+          <>
+            <Row className="mb-4">
+              <Col>
+                <h3 className="text-center">Available Parking Lots</h3>
+                <p className="text-center text-muted">
+                  Select a parking lot to book your spot
+                </p>
+              </Col>
+            </Row>
+            <Row>
+          {lots.map((lot) => (
+            <Col md={4} lg={3} key={lot.lot_id} className="mb-4">
+              <Card className="lot-card shadow-lg">
+                <Card.Body className="p-4 position-relative">
+                  <div className="lot-status-badge">
+                    <Badge
+                      bg={
+                        lot.available_spots > 10
+                          ? "success"
+                          : lot.available_spots > 0
+                          ? "warning"
+                          : "danger"
+                      }
+                      className="status-badge"
+                    >
+                      {lot.status === "open" ? "Open" : "Closed"}
+                    </Badge>
+                  </div>
+                  <Card.Title className="fw-bold mt-2 mb-3">
+                    {lot.lot_name}
+                  </Card.Title>
+                  <Card.Text className="text-muted mb-3">
+                    📍 {lot.location}
+                  </Card.Text>
+                  <div className="lot-info mb-3">
+                    <div className="info-item">
+                      <span className="info-label">Available:</span>
+                      <span className="info-value">
+                        {lot.available_spots} / {lot.total_spots}
+                      </span>
+                    </div>
+                    <div className="info-item">
+                      <span className="info-label">Rate:</span>
+                      <span className="info-value">₹{lot.hourly_rate}/hr</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant={lot.available_spots > 0 && lot.status === "open" ? "success" : "secondary"}
+                    className="w-100"
+                    onClick={() => navigate(`/book/${lot.lot_id}`)}
+                    disabled={lot.available_spots === 0 || lot.status !== "open"}
+                  >
+                    {lot.available_spots > 0 && lot.status === "open"
+                      ? "Book Now"
+                      : "Not Available"}
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          ))}
+        </Row>
+        </>
+        )}
+
+        {/* My Bookings Tab */}
+        {activeTab === "bookings" && (
+          <Row>
+            <Col>
+              <Card className="shadow-lg">
+                <Card.Header>
+                  <h4 className="mb-0">📅 My Bookings</h4>
+                </Card.Header>
+                <Card.Body>
+                  {bookings.length === 0 ? (
+                    <Alert variant="info" className="text-center">
+                      <p className="mb-0">No bookings yet. Book a parking spot to see your bookings here!</p>
+                    </Alert>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-hover">
+                        <thead>
+                          <tr>
+                            <th>Booking ID</th>
+                            <th>Parking Lot</th>
+                            <th>Location</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Duration</th>
+                            <th>Total Cost</th>
+                            <th>Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {bookings.map((booking) => {
+                            const start = new Date(booking.start_time);
+                            const end = new Date(booking.end_time);
+                            const hours = Math.ceil((end - start) / (1000 * 60 * 60));
+                            return (
+                              <tr key={booking.reservation_id}>
+                                <td>#{booking.reservation_id}</td>
+                                <td>{booking.lot_name}</td>
+                                <td>{booking.location}</td>
+                                <td>{start.toLocaleString()}</td>
+                                <td>{end.toLocaleString()}</td>
+                                <td>{hours} hour{hours !== 1 ? 's' : ''}</td>
+                                <td className="fw-bold text-success">₹{parseFloat(booking.total_cost).toFixed(2)}</td>
+                                <td>
+                                  <Badge
+                                    bg={
+                                      booking.status === "active"
+                                        ? "success"
+                                        : booking.status === "completed"
+                                        ? "primary"
+                                        : "secondary"
+                                    }
+                                  >
+                                    {booking.status}
+                                  </Badge>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                      <div className="mt-3 p-3 bg-light rounded">
+                        <strong>Total Spent: </strong>
+                        <span className="text-success fw-bold fs-5">
+                          ₹{bookings.reduce((sum, b) => sum + parseFloat(b.total_cost || 0), 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
+        )}
+      </Container>
+    </div>
   );
 }
 

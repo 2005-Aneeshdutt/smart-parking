@@ -95,3 +95,123 @@ def book_parking_spot(data: BookingRequest):
     finally:
         cursor.close()
         db.close()
+
+
+@router.get("/bookings/{user_id}")
+def get_user_bookings(user_id: int):
+    """Get all bookings for a specific user - Try view first, fallback to direct query"""
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Try using the view first
+        try:
+            cursor.execute("""
+                SELECT * FROM v_user_bookings
+                WHERE user_id = %s
+                ORDER BY created_at DESC
+            """, (user_id,))
+            bookings = cursor.fetchall()
+        except:
+            # Fallback: Direct query from reservations table if view doesn't exist
+            cursor.execute("""
+                SELECT 
+                    r.reservation_id,
+                    r.user_id,
+                    u.name as user_name,
+                    u.email,
+                    r.lot_id,
+                    p.lot_name,
+                    p.location,
+                    r.start_time,
+                    r.end_time,
+                    TIMESTAMPDIFF(HOUR, r.start_time, r.end_time) as duration_hours,
+                    r.total_cost,
+                    r.status,
+                    r.created_at
+                FROM reservations r
+                JOIN users u ON r.user_id = u.user_id
+                JOIN parking_lots p ON r.lot_id = p.lot_id
+                WHERE r.user_id = %s
+                ORDER BY r.created_at DESC
+            """, (user_id,))
+            bookings = cursor.fetchall()
+        
+        # Convert datetime objects to strings
+        for booking in bookings:
+            if booking.get('start_time'):
+                booking['start_time'] = booking['start_time'].isoformat() if hasattr(booking['start_time'], 'isoformat') else str(booking['start_time'])
+            if booking.get('end_time'):
+                booking['end_time'] = booking['end_time'].isoformat() if hasattr(booking['end_time'], 'isoformat') else str(booking['end_time'])
+            if booking.get('created_at'):
+                booking['created_at'] = booking['created_at'].isoformat() if hasattr(booking['created_at'], 'isoformat') else str(booking['created_at'])
+        
+        return {"bookings": bookings}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching bookings: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+
+
+@router.get("/lots/{lot_id}/calculate-cost")
+def calculate_parking_cost(lot_id: int, start_time: str = Query(...), end_time: str = Query(...)):
+    """Calculate parking cost using database function"""
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    cursor = db.cursor()
+    
+    try:
+        start_dt = datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
+        end_dt = datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
+        
+        # Using database function
+        cursor.execute("SELECT calculate_parking_cost(%s, %s, %s) as cost", (lot_id, start_dt, end_dt))
+        result = cursor.fetchone()
+        
+        return {
+            "lot_id": lot_id,
+            "start_time": start_time,
+            "end_time": end_time,
+            "calculated_cost": float(result[0])
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error calculating cost: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
+
+
+@router.get("/lots/{lot_id}/status")
+def get_lot_status(lot_id: int):
+    """Get parking lot status using database function"""
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Using database function
+        cursor.execute("SELECT get_lot_status(%s) as status", (lot_id,))
+        status_result = cursor.fetchone()
+        
+        # Also get available spots using function
+        cursor.execute("SELECT check_available_spots(%s) as available", (lot_id,))
+        available_result = cursor.fetchone()
+        
+        return {
+            "lot_id": lot_id,
+            "status": status_result["status"],
+            "available_spots": available_result["available"]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching status: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()
