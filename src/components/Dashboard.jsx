@@ -36,6 +36,23 @@ function Dashboard() {
     }
   };
 
+  const handleCancelBooking = async (reservationId) => {
+    if (!window.confirm("Are you sure you want to cancel this booking? The parking spot will be freed up and made available for others.")) {
+      return;
+    }
+
+    try {
+      await axios.put(`http://127.0.0.1:8000/parking/bookings/${reservationId}/cancel`);
+      // Refresh bookings and lots after cancellation
+      await Promise.all([fetchBookings(), fetchLots()]);
+      alert("Booking cancelled successfully!");
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || "Failed to cancel booking";
+      alert(errorMsg);
+      console.error("Cancel booking error:", err);
+    }
+  };
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -170,7 +187,7 @@ function Dashboard() {
                     {lot.lot_name}
                   </Card.Title>
                   <Card.Text className="text-muted mb-3">
-                    📍 {lot.location}
+                    <span>📍</span> <span>{lot.location}</span>
                   </Card.Text>
                   <div className="lot-info mb-3">
                     <div className="info-item">
@@ -228,6 +245,7 @@ function Dashboard() {
                             <th>Duration</th>
                             <th>Total Cost</th>
                             <th>Status</th>
+                            <th>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -235,6 +253,9 @@ function Dashboard() {
                             const start = new Date(booking.start_time);
                             const end = new Date(booking.end_time);
                             const hours = Math.ceil((end - start) / (1000 * 60 * 60));
+                            const isActive = booking.status === "active";
+                            // Allow cancellation of any active booking (even if it has started)
+                            const canCancel = isActive;
                             return (
                               <tr key={booking.reservation_id}>
                                 <td>#{booking.reservation_id}</td>
@@ -243,7 +264,7 @@ function Dashboard() {
                                 <td>{start.toLocaleString()}</td>
                                 <td>{end.toLocaleString()}</td>
                                 <td>{hours} hour{hours !== 1 ? 's' : ''}</td>
-                                <td className="fw-bold text-success">₹{parseFloat(booking.total_cost).toFixed(2)}</td>
+                                <td className="fw-bold" style={{color: '#10b981', textShadow: '0 0 8px rgba(16, 185, 129, 0.4)'}}>₹{parseFloat(booking.total_cost).toFixed(2)}</td>
                                 <td>
                                   <Badge
                                     bg={
@@ -251,22 +272,44 @@ function Dashboard() {
                                         ? "success"
                                         : booking.status === "completed"
                                         ? "primary"
+                                        : booking.status === "cancelled"
+                                        ? "danger"
                                         : "secondary"
                                     }
                                   >
                                     {booking.status}
                                   </Badge>
                                 </td>
+                                <td>
+                                  {canCancel && (
+                                    <Button
+                                      variant="outline-danger"
+                                      size="sm"
+                                      onClick={() => handleCancelBooking(booking.reservation_id)}
+                                      className="cancel-btn"
+                                    >
+                                      Cancel
+                                    </Button>
+                                  )}
+                                  {!canCancel && <span className="text-muted" style={{color: '#888888'}}>-</span>}
+                                </td>
                               </tr>
                             );
                           })}
                         </tbody>
                       </table>
-                      <div className="mt-3 p-3 bg-light rounded">
-                        <strong>Total Spent: </strong>
-                        <span className="text-success fw-bold fs-5">
-                          ₹{bookings.reduce((sum, b) => sum + parseFloat(b.total_cost || 0), 0).toFixed(2)}
+                      <div className="mt-3 p-3 bg-light rounded" style={{background: 'rgba(18, 18, 32, 0.6)', border: '1px solid rgba(255, 255, 255, 0.1)'}}>
+                        <strong style={{color: '#ffffff'}}>Total Spent: </strong>
+                        <span className="text-success fw-bold fs-5" style={{color: '#10b981', textShadow: '0 0 10px rgba(16, 185, 129, 0.5)'}}>
+                          ₹{bookings
+                            .filter(b => b.status !== 'cancelled')
+                            .reduce((sum, b) => sum + parseFloat(b.total_cost || 0), 0).toFixed(2)}
                         </span>
+                        <p className="text-muted mb-0 mt-2 small" style={{color: '#888888'}}>
+                          Active Bookings: {bookings.filter(b => b.status === 'active').length} | 
+                          Completed: {bookings.filter(b => b.status === 'completed').length} | 
+                          Cancelled: {bookings.filter(b => b.status === 'cancelled').length}
+                        </p>
                       </div>
                     </div>
                   )}

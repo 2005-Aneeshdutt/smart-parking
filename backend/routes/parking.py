@@ -215,3 +215,58 @@ def get_lot_status(lot_id: int):
     finally:
         cursor.close()
         db.close()
+
+
+@router.put("/bookings/{reservation_id}/cancel")
+def cancel_booking(reservation_id: int):
+    """Cancel a booking - updates status to 'cancelled' which triggers database to free up spots"""
+    db = get_db()
+    if not db:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    cursor = db.cursor(dictionary=True)
+    
+    try:
+        # Check if booking exists and get its details
+        cursor.execute("""
+            SELECT reservation_id, user_id, lot_id, status, start_time
+            FROM reservations
+            WHERE reservation_id = %s
+        """, (reservation_id,))
+        
+        booking = cursor.fetchone()
+        
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        
+        # Check if booking is already cancelled or completed
+        if booking['status'] == 'cancelled':
+            raise HTTPException(status_code=400, detail="Booking is already cancelled")
+        
+        if booking['status'] == 'completed':
+            raise HTTPException(status_code=400, detail="Cannot cancel a completed booking")
+        
+        # Update booking status to cancelled
+        # The trigger will automatically free up the parking spot
+        cursor.execute("""
+            UPDATE reservations
+            SET status = 'cancelled'
+            WHERE reservation_id = %s
+        """, (reservation_id,))
+        
+        db.commit()
+        
+        return {
+            "message": "Booking cancelled successfully",
+            "reservation_id": reservation_id,
+            "status": "cancelled"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error cancelling booking: {str(e)}")
+    finally:
+        cursor.close()
+        db.close()

@@ -2,7 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Container, Card, Button, Spinner, Alert, Form, Badge } from "react-bootstrap";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import "../styles/BookPage.css";
+import "../styles/DatePickerOverride.css";
 import { useAuth } from "../context/AuthContext1";
 
 function BookPage() {
@@ -11,8 +14,8 @@ function BookPage() {
   const [lot, setLot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null);
   const [bookingStatus, setBookingStatus] = useState("");
   const [isBooking, setIsBooking] = useState(false);
   const [bookingDetails, setBookingDetails] = useState(null);
@@ -41,6 +44,11 @@ function BookPage() {
       return;
     }
 
+    if (endTime <= startTime) {
+      alert("End time must be after start time.");
+      return;
+    }
+
     if (!user || !user.user_id) {
       alert("You must be logged in to book a parking spot.");
       return;
@@ -51,11 +59,21 @@ function BookPage() {
     setBookingDetails(null);
 
     try {
+      // Format dates to match backend expected format: "YYYY-MM-DDTHH:MM"
+      const formatDateTime = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+      };
+
       const bookingData = {
         user_id: user.user_id, 
         lot_id: parseInt(lot_id),
-        start_time: startTime,
-        end_time: endTime
+        start_time: formatDateTime(startTime),
+        end_time: formatDateTime(endTime)
       };
 
       const res = await axios.post("http://127.0.0.1:8000/parking/book", bookingData);
@@ -115,23 +133,43 @@ function BookPage() {
             <Form className="mt-4" onSubmit={(e) => { e.preventDefault(); handleBooking(); }}>
               <Form.Group className="mb-3">
                 <Form.Label>Start Time</Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
-                  min={new Date().toISOString().slice(0, 16)}
-                  required
-                />
+                <div className="date-picker-container">
+                  <DatePicker
+                    selected={startTime}
+                    onChange={(date) => setStartTime(date)}
+                    showTimeSelect
+                    timeFormat="HH:mm"
+                    timeIntervals={15}
+                    dateFormat="MMMM d, yyyy h:mm aa"
+                    minDate={new Date()}
+                    placeholderText="Click to select start date and time"
+                    className="form-control date-picker-input"
+                    wrapperClassName="date-picker-wrapper"
+                    calendarClassName="dark-theme-calendar"
+                    required
+                  />
+                  <span className="calendar-icon">📅</span>
+                </div>
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>End Time</Form.Label>
-                <Form.Control
-                  type="datetime-local"
-                  value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
-                  min={startTime || new Date().toISOString().slice(0, 16)}
-                  required
-                />
+                <div className="date-picker-container">
+                  <DatePicker
+                    selected={endTime}
+                    onChange={(date) => setEndTime(date)}
+                    showTimeSelect
+                    timeFormat="HH:mm"
+                    timeIntervals={15}
+                    dateFormat="MMMM d, yyyy h:mm aa"
+                    minDate={startTime || new Date()}
+                    placeholderText="Click to select end date and time"
+                    className="form-control date-picker-input"
+                    wrapperClassName="date-picker-wrapper"
+                    calendarClassName="dark-theme-calendar"
+                    required
+                  />
+                  <span className="calendar-icon">📅</span>
+                </div>
               </Form.Group>
             
             <div className="button-group">

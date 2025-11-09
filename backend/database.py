@@ -8,11 +8,19 @@ load_dotenv()
 
 def get_db():
     try:
+        # Use 127.0.0.1 instead of localhost to force TCP/IP connection on Windows
+        host = os.getenv("DB_HOST", "localhost")
+        if host == "localhost":
+            host = "127.0.0.1"
+        
         db = mysql.connector.connect(
-            host=os.getenv("DB_HOST"),
+            host=host,
             user=os.getenv("DB_USER"),
             password=os.getenv("DB_PASSWORD"),
-            database=os.getenv("DB_NAME")
+            database=os.getenv("DB_NAME"),
+            port=3306,
+            use_unicode=True,
+            charset='utf8mb4'
         )
 
         if db.is_connected():

@@ -222,143 +222,20 @@ FROM reservations r
 JOIN users u ON r.user_id = u.user_id
 JOIN parking_lots p ON r.lot_id = p.lot_id;
 
--- View: Revenue summary by parking lot
+-- View: Revenue summary by parking lot (exclude cancelled bookings)
 CREATE OR REPLACE VIEW v_lot_revenue_summary AS
 SELECT 
     p.lot_id,
     p.lot_name,
     p.location,
-    COUNT(r.reservation_id) as total_bookings,
-    SUM(r.total_cost) as total_revenue,
-    AVG(r.total_cost) as avg_booking_cost,
-    MAX(r.total_cost) as max_booking_cost,
-    MIN(r.total_cost) as min_booking_cost
+    COUNT(CASE WHEN r.reservation_id IS NOT NULL AND r.status != 'cancelled' THEN r.reservation_id END) as total_bookings,
+    COALESCE(SUM(CASE WHEN r.status != 'cancelled' THEN r.total_cost ELSE 0 END), 0) as total_revenue,
+    COALESCE(AVG(CASE WHEN r.status != 'cancelled' THEN r.total_cost END), 0) as avg_booking_cost,
+    COALESCE(MAX(CASE WHEN r.status != 'cancelled' THEN r.total_cost END), 0) as max_booking_cost,
+    COALESCE(MIN(CASE WHEN r.status != 'cancelled' THEN r.total_cost END), 0) as min_booking_cost
 FROM parking_lots p
 LEFT JOIN reservations r ON p.lot_id = r.lot_id
 GROUP BY p.lot_id, p.lot_name, p.location;
-
--- ============================================
--- 4. COMMON TABLE EXPRESSIONS (CTEs) - Example Queries
--- ============================================
-
--- Note: CTEs are used in SELECT queries, not stored as database objects
--- Here are example queries you can use in your backend code:
-
-/*
--- Example CTE Query 1: Find parking lots with decreasing availability trend
-WITH availability_trend AS (
-    SELECT 
-        lot_id,
-        lot_name,
-        available_spots,
-        LAG(available_spots) OVER (PARTITION BY lot_id ORDER BY lot_id) as previous_spots
-    FROM parking_lots
-)
-SELECT 
-    lot_id,
-    lot_name,
-    available_spots,
-    previous_spots,
-    (available_spots - previous_spots) as change
-FROM availability_trend
-WHERE (available_spots - previous_spots) < 0;
-*/
-
-/*
--- Example CTE Query 2: Monthly revenue breakdown with running totals
-WITH monthly_revenue AS (
-    SELECT 
-        DATE_FORMAT(created_at, '%Y-%m') as month,
-        SUM(total_cost) as revenue
-    FROM reservations
-    GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-),
-running_total AS (
-    SELECT 
-        month,
-        revenue,
-        SUM(revenue) OVER (ORDER BY month) as running_total
-    FROM monthly_revenue
-)
-SELECT * FROM running_total ORDER BY month;
-*/
-
-/*
--- Example CTE Query 3: Find top users by spending
-WITH user_spending AS (
-    SELECT 
-        user_id,
-        SUM(total_cost) as total_spent,
-        COUNT(*) as booking_count
-    FROM reservations
-    GROUP BY user_id
-),
-ranked_users AS (
-    SELECT 
-        u.user_id,
-        u.name,
-        u.email,
-        us.total_spent,
-        us.booking_count,
-        RANK() OVER (ORDER BY us.total_spent DESC) as spending_rank
-    FROM users u
-    JOIN user_spending us ON u.user_id = us.user_id
-)
-SELECT * FROM ranked_users WHERE spending_rank <= 10;
-*/
-
--- ============================================
--- 5. HELPER QUERIES TO USE CTEs
--- ============================================
-
--- Query: Parking lots with recursive availability check (using CTE)
--- This shows how to use CTE for complex analytics
-
--- Example: Daily booking trends (this query can be used in admin dashboard)
--- Use this in your backend/routes/admin.py
-
-/*
-WITH daily_stats AS (
-    SELECT 
-        DATE(created_at) as booking_date,
-        COUNT(*) as bookings_count,
-        SUM(total_cost) as daily_revenue,
-        AVG(total_cost) as avg_booking_value
-    FROM reservations
-    WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-    GROUP BY DATE(created_at)
-)
-SELECT 
-    booking_date,
-    bookings_count,
-    daily_revenue,
-    avg_booking_value,
-    SUM(daily_revenue) OVER (ORDER BY booking_date) as cumulative_revenue
-FROM daily_stats
-ORDER BY booking_date DESC;
-*/
-
--- ============================================
--- 6. TESTING THE FEATURES
--- ============================================
-
--- Test Function: Calculate parking cost
--- SELECT calculate_parking_cost(1, '2024-01-01 10:00:00', '2024-01-01 14:00:00') as total_cost;
-
--- Test Function: Check available spots
--- SELECT check_available_spots(1) as available_spots;
-
--- Test Function: Get lot status
--- SELECT get_lot_status(1) as status;
-
--- Test View: Parking lot summary
--- SELECT * FROM v_parking_lot_summary WHERE lot_id = 1;
-
--- Test View: User bookings
--- SELECT * FROM v_user_bookings WHERE user_id = 1;
-
--- Test View: Revenue summary
--- SELECT * FROM v_lot_revenue_summary ORDER BY total_revenue DESC;
 
 SELECT 'All advanced database features created successfully!' AS status;
 

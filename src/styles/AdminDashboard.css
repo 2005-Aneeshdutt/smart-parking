@@ -1,38 +1,121 @@
+/* Dark Space Theme with Glassmorphism */
 .admin-dashboard {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding-bottom: 2rem;
+  background: linear-gradient(135deg, #1a0f3d 0%, #0a051a 50%, #1a0f3d 100%);
+  padding-bottom: 3rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Animated Star Background */
+.admin-dashboard::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20% 30%, #e0e0ff, transparent),
+    radial-gradient(2px 2px at 60% 70%, #e0e0ff, transparent),
+    radial-gradient(1px 1px at 50% 50%, #e0e0ff, transparent),
+    radial-gradient(1px 1px at 80% 10%, #e0e0ff, transparent),
+    radial-gradient(2px 2px at 90% 40%, #e0e0ff, transparent),
+    radial-gradient(1px 1px at 33% 60%, #e0e0ff, transparent),
+    radial-gradient(1px 1px at 55% 80%, #e0e0ff, transparent);
+  background-repeat: repeat;
+  background-size: 200% 200%;
+  animation: stars 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+@keyframes stars {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-200px);
+  }
 }
 
 .admin-header {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 1.5rem 0;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  background: rgba(18, 18, 32, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 1.75rem 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+}
+
+.admin-header h2 {
+  font-weight: 800;
+  color: #00bfff;
+  font-size: 1.875rem;
+  margin-bottom: 0.25rem;
+  text-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
 }
 
 .admin-icon {
-  font-size: 1.5rem;
-  margin-right: 0.5rem;
+  font-size: 2rem;
+  margin-right: 0.75rem;
+  filter: drop-shadow(0 0 10px rgba(0, 191, 255, 0.6));
+}
+
+.admin-header p {
+  color: #cccccc;
+  font-size: 0.95rem;
+  margin: 0;
 }
 
 .admin-tabs {
   margin-bottom: 2rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  background: rgba(18, 18, 32, 0.6);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  padding: 1.25rem;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 191, 255, 0.2);
 }
 
 .admin-tabs .btn {
-  border-radius: 8px;
-  padding: 0.5rem 1.5rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  border-radius: 14px;
+  padding: 0.875rem 1.75rem;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: 2px solid transparent;
+  font-size: 1rem;
 }
 
-.admin-tabs .btn:hover {
+.admin-tabs .btn-primary {
+  background: linear-gradient(135deg, #007bff 0%, #00bfff 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.admin-tabs .btn-outline-primary {
+  background: rgba(18, 18, 32, 0.7);
+  color: #00bfff;
+  border: 2px solid rgba(0, 191, 255, 0.4);
+}
+
+.admin-tabs .btn-outline-primary:hover {
+  background: linear-gradient(135deg, #007bff 0%, #00bfff 100%);
+  color: white;
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 24px rgba(0, 191, 255, 0.5);
+  border-color: transparent;
 }
 
 .admin-loading {
@@ -41,160 +124,466 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg, #1a0f3d 0%, #0a051a 100%);
+  color: #00bfff;
 }
 
 .admin-loading p {
-  margin-top: 1rem;
-  font-size: 1.2rem;
+  margin-top: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
+/* Glassmorphism Stat Cards */
 .stat-card {
   border: none;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border-radius: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
+  position: relative;
+  animation: fadeIn 0.6s ease-out;
+  background: rgba(18, 18, 32, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  pointer-events: none;
+  z-index: 0;
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 50px rgba(0, 191, 255, 0.3);
+  border-color: rgba(0, 191, 255, 0.4);
 }
 
 .stat-card .card-body {
-  padding: 2rem;
+  padding: 2.5rem 2rem;
   text-align: center;
+  position: relative;
+  z-index: 1;
+  background: transparent;
 }
 
 .stat-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 3.5rem;
+  margin-bottom: 1.25rem;
+  filter: drop-shadow(0 0 15px rgba(0, 191, 255, 0.6));
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .stat-card h3 {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin: 0.5rem 0;
-  color: #333;
+  font-size: 3rem;
+  font-weight: 800;
+  margin: 0.75rem 0;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
 }
 
 .stat-card .text-muted {
   font-size: 1rem;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+  color: #cccccc;
 }
 
-.stat-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+/* Icon Colors */
+.stat-primary .stat-icon {
+  color: #007bff;
+  filter: drop-shadow(0 0 15px rgba(0, 123, 255, 0.8));
 }
 
-.stat-primary .text-muted,
-.stat-primary h3 {
-  color: white;
+.stat-success .stat-icon {
+  color: #10b981;
+  filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.8));
 }
 
-.stat-success {
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-  color: white;
+.stat-warning .stat-icon {
+  color: #ffd700;
+  filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8));
 }
 
-.stat-success .text-muted,
-.stat-success h3 {
-  color: white;
-}
-
-.stat-warning {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  color: white;
-}
-
-.stat-warning .text-muted,
-.stat-warning h3 {
-  color: white;
-}
-
-.stat-info {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  color: white;
-}
-
-.stat-info .text-muted,
-.stat-info h3 {
-  color: white;
+.stat-info .stat-icon {
+  color: #e040fb;
+  filter: drop-shadow(0 0 15px rgba(224, 64, 251, 0.8));
 }
 
 .progress-container {
   width: 100%;
-  height: 30px;
-  background-color: rgba(0, 0, 0, 0.1);
-  border-radius: 15px;
+  height: 36px;
+  background-color: rgba(0, 0, 0, 0.3);
+  border-radius: 18px;
   overflow: hidden;
-  margin: 1rem 0;
+  margin: 1.5rem 0;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .progress-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #007bff 0%, #00bfff 50%, #e040fb 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
-  font-weight: bold;
-  transition: width 0.5s ease;
-  border-radius: 15px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 18px;
+  box-shadow: 0 0 20px rgba(0, 191, 255, 0.5);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-.table {
-  background: white;
+/* Glassmorphism Tables */
+.admin-dashboard .table {
+  background: rgba(18, 18, 32, 0.8) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #cccccc !important;
 }
 
-.table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.admin-dashboard .table thead {
+  background: linear-gradient(135deg, rgba(0, 123, 255, 0.3) 0%, rgba(0, 191, 255, 0.3) 100%) !important;
+  color: #00bfff !important;
+  border-bottom: 2px solid rgba(0, 191, 255, 0.3) !important;
+}
+
+.admin-dashboard .table thead th {
+  border: none !important;
+  padding: 1.25rem 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+.admin-dashboard .table tbody tr {
+  transition: all 0.2s ease;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  background: rgba(18, 18, 32, 0.5) !important;
+}
+
+.admin-dashboard .table tbody tr:hover {
+  background: rgba(0, 191, 255, 0.15) !important;
+  transform: scale(1.01);
+}
+
+.admin-dashboard .table tbody tr:last-child {
+  border-bottom: none !important;
+}
+
+.admin-dashboard .table tbody td {
+  padding: 1.25rem 1rem;
+  vertical-align: middle;
+  color: #cccccc !important;
+  background: transparent !important;
+}
+
+.admin-dashboard .table tbody td.fw-bold {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+/* Striped table rows for dark theme */
+.admin-dashboard .table-striped tbody tr:nth-of-type(odd) {
+  background: rgba(18, 18, 32, 0.5) !important;
+}
+
+.admin-dashboard .table-striped tbody tr:nth-of-type(even) {
+  background: rgba(18, 18, 32, 0.3) !important;
+}
+
+.admin-dashboard .table-striped tbody tr:hover {
+  background: rgba(0, 191, 255, 0.15) !important;
+}
+
+.admin-dashboard .badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Badge colors for dark theme */
+.admin-dashboard .badge.bg-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.admin-dashboard .badge.bg-primary {
+  background: linear-gradient(135deg, #007bff 0%, #00bfff 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(0, 191, 255, 0.4);
+}
+
+.admin-dashboard .badge.bg-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+}
+
+.admin-dashboard .badge.bg-warning {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(245, 158, 11, 0.4);
+}
+
+.admin-dashboard .badge.bg-secondary {
+  background: rgba(108, 117, 125, 0.8) !important;
+  color: #ffffff !important;
+}
+
+.admin-dashboard .badge.bg-info {
+  background: linear-gradient(135deg, #007bff 0%, #00bfff 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 15px rgba(0, 191, 255, 0.4);
+}
+
+/* Glassmorphism Cards */
+.admin-dashboard .card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  animation: fadeIn 0.6s ease-out;
+  background: rgba(18, 18, 32, 0.8) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.admin-dashboard .card-header {
+  background: linear-gradient(135deg, rgba(0, 123, 255, 0.3) 0%, rgba(0, 191, 255, 0.3) 100%) !important;
+  color: #00bfff !important;
+  padding: 1.5rem;
+  border: none !important;
+  font-weight: 700;
+  font-size: 1.125rem;
+  border-bottom: 1px solid rgba(0, 191, 255, 0.2) !important;
+}
+
+.admin-dashboard .card-header h5 {
+  color: #ffffff !important;
+  text-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+}
+
+.admin-dashboard .card-body {
+  padding: 2rem;
+  background: transparent !important;
+  color: #cccccc;
+}
+
+.admin-dashboard .card-body h5 {
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.admin-dashboard .card-body p {
+  color: #cccccc !important;
+}
+
+.admin-dashboard .card-body strong {
+  color: #00bfff !important;
+}
+
+.admin-dashboard .card-body .text-success {
+  color: #10b981 !important;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.admin-dashboard .card-body .text-muted {
+  color: #888888 !important;
+}
+
+/* Buttons in admin */
+.admin-dashboard .btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border: none;
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
   color: white;
 }
 
-.table thead th {
-  border: none;
-  padding: 1rem;
-  font-weight: 600;
+.admin-dashboard .btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.45);
+  color: white;
 }
 
-.table tbody tr {
-  transition: background-color 0.2s ease;
+.admin-dashboard .btn-outline-danger {
+  border: 2px solid #ef4444;
+  color: #ef4444;
+  background: rgba(18, 18, 32, 0.7);
 }
 
-.table tbody tr:hover {
-  background-color: rgba(102, 126, 234, 0.1);
+.admin-dashboard .btn-outline-danger:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+  border-color: transparent;
 }
 
-.badge {
-  padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  border-radius: 20px;
+.admin-dashboard .btn-outline-primary {
+  border: 2px solid #00bfff;
+  color: #00bfff;
+  background: rgba(18, 18, 32, 0.7);
 }
 
+.admin-dashboard .btn-outline-primary:hover {
+  background: linear-gradient(135deg, #007bff 0%, #00bfff 100%);
+  color: white;
+  border-color: transparent;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 191, 255, 0.35);
+}
+
+/* Logout Button */
+.admin-dashboard .btn-danger {
+  background: rgba(239, 68, 68, 0.2);
+  border: 2px solid #ef4444;
+  color: #ef4444;
+  backdrop-filter: blur(10px);
+}
+
+.admin-dashboard .btn-danger:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border-color: transparent;
+}
+
+/* Alert Styling */
+.admin-dashboard .alert {
+  background: rgba(18, 18, 32, 0.8) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #cccccc !important;
+  border-radius: 16px;
+}
+
+.admin-dashboard .alert-info {
+  border-color: rgba(0, 191, 255, 0.3) !important;
+  background: rgba(0, 123, 255, 0.1) !important;
+  color: #00bfff !important;
+}
+
+.admin-dashboard .alert p {
+  color: #cccccc !important;
+}
+
+/* Modal Styling */
+.admin-dashboard .modal-content {
+  background: rgba(18, 18, 32, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cccccc;
+}
+
+.admin-dashboard .modal-header {
+  border-bottom: 1px solid rgba(0, 191, 255, 0.2);
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.admin-dashboard .modal-title {
+  color: #00bfff;
+}
+
+.admin-dashboard .modal-body {
+  color: #cccccc;
+}
+
+.admin-dashboard .form-label {
+  color: #ffffff;
+}
+
+.admin-dashboard .form-control {
+  background: rgba(18, 18, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-radius: 10px;
+}
+
+.admin-dashboard .form-control:focus {
+  background: rgba(18, 18, 32, 0.9);
+  border-color: #00bfff;
+  color: #ffffff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 191, 255, 0.25);
+}
+
+.admin-dashboard .form-control::placeholder {
+  color: #888888;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* Responsive */
 @media (max-width: 768px) {
   .admin-tabs {
     flex-direction: column;
+    padding: 1rem;
   }
 
   .admin-tabs .btn {
     width: 100%;
+    margin: 0.25rem 0;
   }
 
   .stat-card .card-body {
-    padding: 1.5rem;
+    padding: 1.75rem 1.5rem;
   }
 
   .stat-icon {
-    font-size: 2rem;
+    font-size: 2.5rem;
   }
 
   .stat-card h3 {
-    font-size: 2rem;
+    font-size: 2.25rem;
+  }
+
+  .admin-header {
+    padding: 1.25rem 0;
+  }
+
+  .admin-header h2 {
+    font-size: 1.5rem;
   }
 }
-

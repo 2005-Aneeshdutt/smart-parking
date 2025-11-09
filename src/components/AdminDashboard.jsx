@@ -498,9 +498,14 @@ function AdminDashboard() {
                             ? new Date(booking.end_time).toLocaleString()
                             : "N/A"}
                         </td>
-                        <td className="fw-bold">₹{parseFloat(booking.total_cost || 0).toFixed(2)}</td>
+                        <td className="fw-bold" style={{color: '#10b981', textShadow: '0 0 8px rgba(16, 185, 129, 0.4)'}}>₹{parseFloat(booking.total_cost || 0).toFixed(2)}</td>
                         <td>
-                          <Badge bg="info">
+                          <Badge bg={
+                            booking.status === "active" ? "success" :
+                            booking.status === "completed" ? "primary" :
+                            booking.status === "cancelled" ? "danger" :
+                            "info"
+                          }>
                             {booking.status || "active"}
                           </Badge>
                         </td>
@@ -601,7 +606,7 @@ function AdminDashboard() {
                           <tr key={idx}>
                             <td>{lot.lot_name}</td>
                             <td>{lot.total_bookings}</td>
-                            <td className="fw-bold text-success">₹{parseFloat(lot.revenue || 0).toFixed(2)}</td>
+                            <td className="fw-bold" style={{color: '#10b981', textShadow: '0 0 8px rgba(16, 185, 129, 0.4)'}}>₹{parseFloat(lot.revenue || 0).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -628,6 +633,38 @@ function AdminDashboard() {
                 </Card.Body>
               </Card>
             </Col>
+            <Col md={6} className="mb-4">
+              <Card className="shadow-lg">
+                <Card.Header>
+                  <h5 className="mb-0">⭐ Lots with Revenue Above Average (Nested Query)</h5>
+                  <small className="text-muted">This uses a nested subquery to find lots performing above average</small>
+                </Card.Header>
+                <Card.Body>
+                  {analytics.above_avg_lots && analytics.above_avg_lots.length > 0 ? (
+                    <Table striped hover>
+                      <thead>
+                        <tr>
+                          <th>Lot Name</th>
+                          <th>Location</th>
+                          <th>Revenue</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analytics.above_avg_lots.map((lot, idx) => (
+                          <tr key={idx}>
+                            <td>{lot.lot_name}</td>
+                            <td>{lot.location}</td>
+                            <td className="fw-bold" style={{color: '#10b981', textShadow: '0 0 8px rgba(16, 185, 129, 0.4)'}}>₹{parseFloat(lot.revenue || 0).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </Table>
+                  ) : (
+                    <Alert variant="info">No lots found with revenue above average</Alert>
+                  )}
+                </Card.Body>
+              </Card>
+            </Col>
             <Col md={12} className="mb-4">
               <Card className="shadow-lg">
                 <Card.Header>
@@ -648,7 +685,7 @@ function AdminDashboard() {
                           <tr key={idx}>
                             <td>{new Date(day.date).toLocaleDateString()}</td>
                             <td>{day.bookings_count}</td>
-                            <td className="fw-bold text-success">₹{parseFloat(day.revenue || 0).toFixed(2)}</td>
+                            <td className="fw-bold" style={{color: '#10b981', textShadow: '0 0 8px rgba(16, 185, 129, 0.4)'}}>₹{parseFloat(day.revenue || 0).toFixed(2)}</td>
                           </tr>
                         ))}
                       </tbody>
