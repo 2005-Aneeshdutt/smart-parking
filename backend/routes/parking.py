@@ -3,10 +3,7 @@ from pydantic import BaseModel
 from database import get_db
 from datetime import datetime
 
-
 router = APIRouter(prefix="/parking", tags=["Parking"])
-
-
 
 @router.get("/lots")
 def get_parking_lots():
@@ -24,8 +21,6 @@ def get_parking_lots():
         raise HTTPException(status_code=404, detail="No parking lots found")
 
     return {"parking_lots": lots}
-
-
 
 @router.get("/lots/{lot_id}")
 def get_parking_lot(lot_id: int):
@@ -46,14 +41,11 @@ def get_parking_lot(lot_id: int):
 
     return {"parking_lot": lot}
 
-
-
 class BookingRequest(BaseModel):
     user_id: int
     lot_id: int
     start_time: str
     end_time: str
-
 
 @router.post("/book")
 def book_parking_spot(data: BookingRequest):
@@ -61,17 +53,11 @@ def book_parking_spot(data: BookingRequest):
     cursor = db.cursor()
 
     try:
-        
         start_dt = datetime.strptime(data.start_time, "%Y-%m-%dT%H:%M")
         end_dt = datetime.strptime(data.end_time, "%Y-%m-%dT%H:%M")
 
-        
         cursor.execute("SET @p_total_cost = 0;")
-
-        
         cursor.callproc("make_reservation1", [data.user_id, data.lot_id, start_dt, end_dt, "@p_total_cost"])
-
-        
         cursor.execute("SELECT @p_total_cost;")
         total_cost = cursor.fetchone()[0]
 
@@ -96,10 +82,8 @@ def book_parking_spot(data: BookingRequest):
         cursor.close()
         db.close()
 
-
 @router.get("/bookings/{user_id}")
 def get_user_bookings(user_id: int):
-    """Get all bookings for a specific user - Try view first, fallback to direct query"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -107,7 +91,6 @@ def get_user_bookings(user_id: int):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Try using the view first
         try:
             cursor.execute("""
                 SELECT * FROM v_user_bookings
@@ -116,7 +99,6 @@ def get_user_bookings(user_id: int):
             """, (user_id,))
             bookings = cursor.fetchall()
         except:
-            # Fallback: Direct query from reservations table if view doesn't exist
             cursor.execute("""
                 SELECT 
                     r.reservation_id,
@@ -140,7 +122,6 @@ def get_user_bookings(user_id: int):
             """, (user_id,))
             bookings = cursor.fetchall()
         
-        # Convert datetime objects to strings
         for booking in bookings:
             if booking.get('start_time'):
                 booking['start_time'] = booking['start_time'].isoformat() if hasattr(booking['start_time'], 'isoformat') else str(booking['start_time'])
@@ -156,10 +137,8 @@ def get_user_bookings(user_id: int):
         cursor.close()
         db.close()
 
-
 @router.get("/lots/{lot_id}/calculate-cost")
 def calculate_parking_cost(lot_id: int, start_time: str = Query(...), end_time: str = Query(...)):
-    """Calculate parking cost using database function"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -170,7 +149,6 @@ def calculate_parking_cost(lot_id: int, start_time: str = Query(...), end_time: 
         start_dt = datetime.strptime(start_time, "%Y-%m-%dT%H:%M")
         end_dt = datetime.strptime(end_time, "%Y-%m-%dT%H:%M")
         
-        # Using database function
         cursor.execute("SELECT calculate_parking_cost(%s, %s, %s) as cost", (lot_id, start_dt, end_dt))
         result = cursor.fetchone()
         
@@ -186,10 +164,8 @@ def calculate_parking_cost(lot_id: int, start_time: str = Query(...), end_time: 
         cursor.close()
         db.close()
 
-
 @router.get("/lots/{lot_id}/status")
 def get_lot_status(lot_id: int):
-    """Get parking lot status using database function"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -197,11 +173,9 @@ def get_lot_status(lot_id: int):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Using database function
         cursor.execute("SELECT get_lot_status(%s) as status", (lot_id,))
         status_result = cursor.fetchone()
         
-        # Also get available spots using function
         cursor.execute("SELECT check_available_spots(%s) as available", (lot_id,))
         available_result = cursor.fetchone()
         
@@ -216,10 +190,8 @@ def get_lot_status(lot_id: int):
         cursor.close()
         db.close()
 
-
 @router.put("/bookings/{reservation_id}/cancel")
 def cancel_booking(reservation_id: int):
-    """Cancel a booking - updates status to 'cancelled' which triggers database to free up spots"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -227,7 +199,6 @@ def cancel_booking(reservation_id: int):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Check if booking exists and get its details
         cursor.execute("""
             SELECT reservation_id, user_id, lot_id, status, start_time
             FROM reservations
@@ -239,15 +210,12 @@ def cancel_booking(reservation_id: int):
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
-        # Check if booking is already cancelled or completed
         if booking['status'] == 'cancelled':
             raise HTTPException(status_code=400, detail="Booking is already cancelled")
         
         if booking['status'] == 'completed':
             raise HTTPException(status_code=400, detail="Cannot cancel a completed booking")
         
-        # Update booking status to cancelled
-        # The trigger will automatically free up the parking spot
         cursor.execute("""
             UPDATE reservations
             SET status = 'cancelled'

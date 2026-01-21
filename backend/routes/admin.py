@@ -8,7 +8,6 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 @router.get("/stats")
 def get_admin_stats():
-    """Get dashboard statistics for admin"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -16,32 +15,25 @@ def get_admin_stats():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Total parking lots
         cursor.execute("SELECT COUNT(*) as total FROM parking_lots")
         total_lots = cursor.fetchone()["total"]
         
-        # Total spots
         cursor.execute("SELECT SUM(total_spots) as total FROM parking_lots")
         total_spots = cursor.fetchone()["total"] or 0
         
-        # Available spots
         cursor.execute("SELECT SUM(available_spots) as total FROM parking_lots")
         available_spots = cursor.fetchone()["total"] or 0
         
-        # Total users
         cursor.execute("SELECT COUNT(*) as total FROM users WHERE role = 'driver'")
         total_users = cursor.fetchone()["total"]
         
-        # Total bookings (try to get from reservations table if exists)
         try:
             cursor.execute("SELECT COUNT(*) as total FROM reservations")
             total_bookings = cursor.fetchone()["total"]
         except:
-            # If reservations table doesn't exist, estimate from occupied spots
             cursor.execute("SELECT COUNT(*) as total FROM parking_spots WHERE is_occupied = 1")
             total_bookings = cursor.fetchone()["total"]
         
-        # Revenue (exclude cancelled bookings)
         try:
             cursor.execute("""
                 SELECT COALESCE(SUM(total_cost), 0) as revenue 
@@ -51,7 +43,6 @@ def get_admin_stats():
             revenue_result = cursor.fetchone()
             total_revenue = float(revenue_result["revenue"]) if revenue_result["revenue"] else 0.0
         except:
-            # Estimate based on occupied spots and average rate
             cursor.execute("""
                 SELECT COALESCE(SUM(p.hourly_rate * 2), 0) as revenue 
                 FROM parking_lots p
@@ -60,7 +51,6 @@ def get_admin_stats():
             revenue_result = cursor.fetchone()
             total_revenue = float(revenue_result["revenue"]) if revenue_result["revenue"] else 0.0
         
-        # Occupied spots
         occupied_spots = total_spots - available_spots
         
         return {
@@ -79,10 +69,8 @@ def get_admin_stats():
         cursor.close()
         db.close()
 
-
 @router.get("/bookings")
 def get_all_bookings():
-    """Get all bookings/reservations - Try view first, fallback to direct query"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -90,7 +78,6 @@ def get_all_bookings():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Try using the view first
         try:
             cursor.execute("""
                 SELECT * FROM v_user_bookings
@@ -99,7 +86,6 @@ def get_all_bookings():
             """)
             bookings = cursor.fetchall()
         except:
-            # Fallback: Direct query from reservations table if view doesn't exist
             try:
                 cursor.execute("""
                     SELECT 
@@ -124,10 +110,8 @@ def get_all_bookings():
                 """)
                 bookings = cursor.fetchall()
             except:
-                # If reservations table doesn't exist, return empty
                 bookings = []
         
-        # Convert datetime objects to strings
         for booking in bookings:
             if booking.get('start_time'):
                 booking['start_time'] = booking['start_time'].isoformat() if hasattr(booking['start_time'], 'isoformat') else str(booking['start_time'])
@@ -143,10 +127,8 @@ def get_all_bookings():
         cursor.close()
         db.close()
 
-
 @router.get("/lots/manage")
 def get_all_lots_manage():
-    """Get all parking lots for management - Try view first, fallback to direct query"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -154,12 +136,10 @@ def get_all_lots_manage():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Try using the view first
         try:
             cursor.execute("SELECT * FROM v_parking_lot_summary ORDER BY lot_id")
             lots = cursor.fetchall()
         except:
-            # Fallback: Direct query from parking_lots table if view doesn't exist
             cursor.execute("""
                 SELECT 
                     lot_id,
@@ -188,7 +168,6 @@ def get_all_lots_manage():
         cursor.close()
         db.close()
 
-
 class UpdateLotRequest(BaseModel):
     lot_name: Optional[str] = None
     location: Optional[str] = None
@@ -196,10 +175,8 @@ class UpdateLotRequest(BaseModel):
     hourly_rate: Optional[float] = None
     status: Optional[str] = None
 
-
 @router.put("/lots/{lot_id}")
 def update_lot(lot_id: int, data: UpdateLotRequest):
-    """Update a parking lot"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -207,7 +184,6 @@ def update_lot(lot_id: int, data: UpdateLotRequest):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Build update query dynamically
         updates = []
         params = []
         
@@ -236,7 +212,6 @@ def update_lot(lot_id: int, data: UpdateLotRequest):
         cursor.execute(query, params)
         db.commit()
         
-        # Get updated lot
         cursor.execute("SELECT * FROM parking_lots WHERE lot_id = %s", (lot_id,))
         updated_lot = cursor.fetchone()
         
@@ -248,10 +223,8 @@ def update_lot(lot_id: int, data: UpdateLotRequest):
         cursor.close()
         db.close()
 
-
 @router.get("/users")
 def get_all_users():
-    """Get all users"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -272,7 +245,6 @@ def get_all_users():
         cursor.close()
         db.close()
 
-
 class CreateLotRequest(BaseModel):
     lot_name: str
     location: str
@@ -280,10 +252,8 @@ class CreateLotRequest(BaseModel):
     hourly_rate: float
     status: str = "open"
 
-
 @router.post("/lots")
 def create_parking_lot(data: CreateLotRequest):
-    """Create a new parking lot"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -298,14 +268,13 @@ def create_parking_lot(data: CreateLotRequest):
             data.lot_name,
             data.location,
             data.total_spots,
-            data.total_spots,  # Initially all spots are available
+            data.total_spots,
             data.hourly_rate,
             data.status
         ))
         
         lot_id = cursor.lastrowid
         
-        # Create parking spots for the new lot
         for spot_num in range(1, data.total_spots + 1):
             cursor.execute("""
                 INSERT INTO parking_spots (lot_id, spot_number, is_occupied)
@@ -325,10 +294,8 @@ def create_parking_lot(data: CreateLotRequest):
         cursor.close()
         db.close()
 
-
 @router.delete("/lots/{lot_id}")
 def delete_parking_lot(lot_id: int):
-    """Delete a parking lot"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -336,7 +303,6 @@ def delete_parking_lot(lot_id: int):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Check if lot has active bookings
         cursor.execute("""
             SELECT COUNT(*) as count FROM reservations 
             WHERE lot_id = %s AND status = 'active'
@@ -349,10 +315,7 @@ def delete_parking_lot(lot_id: int):
                 detail=f"Cannot delete lot with {active_bookings} active bookings"
             )
         
-        # Delete parking spots first (due to foreign key)
         cursor.execute("DELETE FROM parking_spots WHERE lot_id = %s", (lot_id,))
-        
-        # Delete the lot
         cursor.execute("DELETE FROM parking_lots WHERE lot_id = %s", (lot_id,))
         
         db.commit()
@@ -367,10 +330,8 @@ def delete_parking_lot(lot_id: int):
         cursor.close()
         db.close()
 
-
 @router.delete("/bookings/{booking_id}")
 def delete_booking(booking_id: int):
-    """Delete/cancel a booking"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -378,7 +339,6 @@ def delete_booking(booking_id: int):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Get booking details
         cursor.execute("""
             SELECT lot_id, status FROM reservations WHERE reservation_id = %s
         """, (booking_id,))
@@ -387,7 +347,6 @@ def delete_booking(booking_id: int):
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
         
-        # If active, update available spots
         if booking["status"] == "active":
             cursor.execute("""
                 UPDATE parking_lots 
@@ -395,7 +354,6 @@ def delete_booking(booking_id: int):
                 WHERE lot_id = %s
             """, (booking["lot_id"],))
             
-            # Free up a parking spot
             cursor.execute("""
                 UPDATE parking_spots 
                 SET is_occupied = 0 
@@ -403,7 +361,6 @@ def delete_booking(booking_id: int):
                 LIMIT 1
             """, (booking["lot_id"],))
         
-        # Delete the booking
         cursor.execute("DELETE FROM reservations WHERE reservation_id = %s", (booking_id,))
         
         db.commit()
@@ -418,17 +375,14 @@ def delete_booking(booking_id: int):
         cursor.close()
         db.close()
 
-
 class CreateUserRequest(BaseModel):
     name: str
     email: str
     password: str
     role: str = "driver"
 
-
 @router.post("/users")
 def create_user(data: CreateUserRequest):
-    """Create a new user"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -438,15 +392,12 @@ def create_user(data: CreateUserRequest):
     try:
         import bcrypt
         
-        # Check if email already exists
         cursor.execute("SELECT user_id FROM users WHERE email = %s", (data.email,))
         if cursor.fetchone():
             raise HTTPException(status_code=400, detail="Email already exists")
         
-        # Hash password
         password_hash = bcrypt.hashpw(data.password.encode(), bcrypt.gensalt()).decode()
         
-        # Insert user
         cursor.execute("""
             INSERT INTO users (name, email, password_hash, role)
             VALUES (%s, %s, %s, %s)
@@ -468,10 +419,8 @@ def create_user(data: CreateUserRequest):
         cursor.close()
         db.close()
 
-
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int):
-    """Delete a user"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -479,17 +428,12 @@ def delete_user(user_id: int):
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Check if user exists
         cursor.execute("SELECT role FROM users WHERE user_id = %s", (user_id,))
         user = cursor.fetchone()
         
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Prevent deleting yourself if you're an admin
-        # This check should be done on frontend, but safety check here too
-        
-        # Delete user (cascades to vehicles and reservations)
         cursor.execute("DELETE FROM users WHERE user_id = %s", (user_id,))
         
         db.commit()
@@ -504,10 +448,8 @@ def delete_user(user_id: int):
         cursor.close()
         db.close()
 
-
 @router.get("/analytics")
 def get_analytics():
-    """Get detailed analytics for admin - with fallbacks"""
     db = get_db()
     if not db:
         raise HTTPException(status_code=500, detail="Database connection failed")
@@ -515,7 +457,6 @@ def get_analytics():
     cursor = db.cursor(dictionary=True)
     
     try:
-        # Check if reservations table exists
         cursor.execute("""
             SELECT COUNT(*) as count FROM information_schema.tables 
             WHERE table_schema = DATABASE() AND table_name = 'reservations'
@@ -524,12 +465,11 @@ def get_analytics():
         
         revenue_by_day = []
         top_lots = []
-        above_avg_lots = []  # Nested query result
+        above_avg_lots = []
         booking_stats = {"total": 0, "active": 0, "completed": 0}
         revenue_with_cte = []
         
         if has_reservations:
-            # Revenue by day (last 7 days) - exclude cancelled bookings
             try:
                 cursor.execute("""
                     SELECT 
@@ -545,7 +485,6 @@ def get_analytics():
             except:
                 revenue_by_day = []
             
-            # Top parking lots by revenue - Try view first, fallback to direct query
             try:
                 cursor.execute("""
                     SELECT 
@@ -562,12 +501,10 @@ def get_analytics():
                     LIMIT 10
                 """)
                 top_lots = cursor.fetchall()
-                # Ensure revenue is a float
                 for lot in top_lots:
                     lot['revenue'] = float(lot.get('revenue', 0) or 0)
                     lot['total_bookings'] = int(lot.get('total_bookings', 0) or 0)
             except:
-                # Fallback: Direct query (exclude cancelled bookings from revenue)
                 try:
                     cursor.execute("""
                         SELECT 
@@ -587,15 +524,12 @@ def get_analytics():
                         LIMIT 10
                     """)
                     top_lots = cursor.fetchall()
-                    # Ensure revenue is a float
                     for lot in top_lots:
                         lot['revenue'] = float(lot.get('revenue', 0) or 0)
                         lot['total_bookings'] = int(lot.get('total_bookings', 0) or 0)
                 except:
                     top_lots = []
             
-            # NESTED QUERY: Find parking lots with revenue above average
-            # This is a nested query (subquery) for evaluation rubrics
             try:
                 cursor.execute("""
                     SELECT 
@@ -625,7 +559,6 @@ def get_analytics():
                 above_avg_lots = []
                 print(f"Error in nested query: {str(e)}")
             
-            # Recent bookings count
             try:
                 cursor.execute("""
                     SELECT 
@@ -647,20 +580,18 @@ def get_analytics():
         return {
             "revenue_by_day": revenue_by_day,
             "top_parking_lots": top_lots,
-            "above_avg_lots": above_avg_lots,  # Nested query result
+            "above_avg_lots": above_avg_lots,
             "booking_stats": booking_stats,
             "revenue_trend": revenue_with_cte
         }
     except Exception as e:
-        # Return empty data instead of raising error
         return {
             "revenue_by_day": [],
             "top_parking_lots": [],
-            "above_avg_lots": [],  # Nested query result
+            "above_avg_lots": [],
             "booking_stats": {"total": 0, "active": 0, "completed": 0},
             "revenue_trend": []
         }
     finally:
         cursor.close()
         db.close()
-

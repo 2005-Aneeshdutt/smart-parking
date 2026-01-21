@@ -58,9 +58,8 @@ function AdminDashboard() {
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      setError(""); // Clear previous errors
+      setError("");
       
-      // Use Promise.allSettled to handle individual failures gracefully
       const results = await Promise.allSettled([
         axios.get("http://127.0.0.1:8000/admin/stats"),
         axios.get("http://127.0.0.1:8000/admin/lots/manage"),
@@ -69,7 +68,6 @@ function AdminDashboard() {
         axios.get("http://127.0.0.1:8000/admin/analytics").catch(() => ({ data: null }))
       ]);
 
-      // Handle each result
       if (results[0].status === 'fulfilled') {
         setStats(results[0].value.data);
       } else {
@@ -101,7 +99,6 @@ function AdminDashboard() {
         setAnalytics(results[4].value.data);
       }
 
-      // Only show error if critical endpoints failed
       const criticalFailures = results.slice(0, 4).filter(r => r.status === 'rejected');
       if (criticalFailures.length > 0) {
         setError(`Failed to load some data. Check console for details.`);
@@ -236,13 +233,12 @@ function AdminDashboard() {
 
   return (
     <div className="admin-dashboard">
-      {/* Header */}
       <div className="admin-header">
         <Container fluid>
           <Row className="align-items-center">
             <Col>
               <h2 className="mb-0">
-                <span className="admin-icon">🛡️</span> Admin Dashboard
+                <span className="admin-icon">A</span> Admin Dashboard
               </h2>
               <p className="text-muted mb-0">Welcome back, {user?.name}</p>
             </Col>
@@ -256,51 +252,49 @@ function AdminDashboard() {
       </div>
 
       <Container fluid className="mt-4">
-        {/* Navigation Tabs */}
         <div className="admin-tabs">
           <Button
             variant={activeTab === "overview" ? "primary" : "outline-primary"}
             onClick={() => setActiveTab("overview")}
             className="me-2"
           >
-            📊 Overview
+            Overview
           </Button>
           <Button
             variant={activeTab === "lots" ? "primary" : "outline-primary"}
             onClick={() => setActiveTab("lots")}
             className="me-2"
           >
-            🅿️ Parking Lots
+            Parking Lots
           </Button>
           <Button
             variant={activeTab === "bookings" ? "primary" : "outline-primary"}
             onClick={() => setActiveTab("bookings")}
             className="me-2"
           >
-            📅 Bookings
+            Bookings
           </Button>
           <Button
             variant={activeTab === "users" ? "primary" : "outline-primary"}
             onClick={() => setActiveTab("users")}
             className="me-2"
           >
-            👥 Users
+            Users
           </Button>
           <Button
             variant={activeTab === "analytics" ? "primary" : "outline-primary"}
             onClick={() => setActiveTab("analytics")}
           >
-            📈 Analytics
+            Analytics
           </Button>
         </div>
 
-        {/* Overview Tab */}
         {activeTab === "overview" && stats && (
           <Row className="mt-4">
             <Col md={3} className="mb-4">
               <Card className="stat-card stat-primary">
                 <Card.Body>
-                  <div className="stat-icon">🅿️</div>
+                  <div className="stat-icon">P</div>
                   <h3>{stats.total_lots}</h3>
                   <p className="text-muted">Total Lots</p>
                 </Card.Body>
@@ -309,7 +303,7 @@ function AdminDashboard() {
             <Col md={3} className="mb-4">
               <Card className="stat-card stat-success">
                 <Card.Body>
-                  <div className="stat-icon">✅</div>
+                  <div className="stat-icon">A</div>
                   <h3>{stats.available_spots}</h3>
                   <p className="text-muted">Available Spots</p>
                 </Card.Body>
@@ -318,7 +312,7 @@ function AdminDashboard() {
             <Col md={3} className="mb-4">
               <Card className="stat-card stat-warning">
                 <Card.Body>
-                  <div className="stat-icon">👥</div>
+                  <div className="stat-icon">U</div>
                   <h3>{stats.total_users}</h3>
                   <p className="text-muted">Total Users</p>
                 </Card.Body>
@@ -327,7 +321,7 @@ function AdminDashboard() {
             <Col md={3} className="mb-4">
               <Card className="stat-card stat-info">
                 <Card.Body>
-                  <div className="stat-icon">💰</div>
+                  <div className="stat-icon">R</div>
                   <h3>₹{stats.total_revenue}</h3>
                   <p className="text-muted">Total Revenue</p>
                 </Card.Body>
@@ -379,7 +373,6 @@ function AdminDashboard() {
           </Row>
         )}
 
-        {/* Parking Lots Tab */}
         {activeTab === "lots" && (
           <Card className="mt-4">
             <Card.Header className="d-flex justify-content-between align-items-center">
@@ -457,7 +450,6 @@ function AdminDashboard() {
           </Card>
         )}
 
-        {/* Bookings Tab */}
         {activeTab === "bookings" && (
           <Card className="mt-4">
             <Card.Header>
@@ -527,7 +519,6 @@ function AdminDashboard() {
           </Card>
         )}
 
-        {/* Users Tab */}
         {activeTab === "users" && (
           <Card className="mt-4">
             <Card.Header className="d-flex justify-content-between align-items-center">
@@ -583,13 +574,12 @@ function AdminDashboard() {
           </Card>
         )}
 
-        {/* Analytics Tab */}
         {activeTab === "analytics" && analytics && (
           <Row className="mt-4">
             <Col md={6} className="mb-4">
               <Card className="shadow-lg">
                 <Card.Header>
-                  <h5 className="mb-0">📊 Top Parking Lots by Revenue</h5>
+                  <h5 className="mb-0">Top Parking Lots by Revenue</h5>
                 </Card.Header>
                 <Card.Body>
                   {analytics.top_parking_lots && analytics.top_parking_lots.length > 0 ? (
@@ -620,7 +610,7 @@ function AdminDashboard() {
             <Col md={6} className="mb-4">
               <Card className="shadow-lg">
                 <Card.Header>
-                  <h5 className="mb-0">📈 Booking Statistics</h5>
+                  <h5 className="mb-0">Booking Statistics</h5>
                 </Card.Header>
                 <Card.Body>
                   {analytics.booking_stats && (
@@ -636,8 +626,7 @@ function AdminDashboard() {
             <Col md={6} className="mb-4">
               <Card className="shadow-lg">
                 <Card.Header>
-                  <h5 className="mb-0">⭐ Lots with Revenue Above Average (Nested Query)</h5>
-                  <small className="text-muted">This uses a nested subquery to find lots performing above average</small>
+                  <h5 className="mb-0">Lots with Revenue Above Average</h5>
                 </Card.Header>
                 <Card.Body>
                   {analytics.above_avg_lots && analytics.above_avg_lots.length > 0 ? (
@@ -668,7 +657,7 @@ function AdminDashboard() {
             <Col md={12} className="mb-4">
               <Card className="shadow-lg">
                 <Card.Header>
-                  <h5 className="mb-0">📅 Revenue by Day (Last 7 Days)</h5>
+                  <h5 className="mb-0">Revenue by Day (Last 7 Days)</h5>
                 </Card.Header>
                 <Card.Body>
                   {analytics.revenue_by_day && analytics.revenue_by_day.length > 0 ? (
@@ -700,7 +689,6 @@ function AdminDashboard() {
         )}
       </Container>
 
-      {/* Edit Lot Modal */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Edit Parking Lot</Modal.Title>
@@ -772,10 +760,9 @@ function AdminDashboard() {
         </Modal.Footer>
       </Modal>
 
-      {/* Create Lot Modal */}
       <Modal show={showCreateLotModal} onHide={() => setShowCreateLotModal(false)} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>➕ Create New Parking Lot</Modal.Title>
+          <Modal.Title>Create New Parking Lot</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
@@ -856,10 +843,9 @@ function AdminDashboard() {
         </Modal.Footer>
       </Modal>
 
-      {/* Create User Modal */}
       <Modal show={showCreateUserModal} onHide={() => setShowCreateUserModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>➕ Create New User</Modal.Title>
+          <Modal.Title>Create New User</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>

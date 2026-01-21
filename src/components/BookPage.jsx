@@ -21,7 +21,6 @@ function BookPage() {
   const [bookingDetails, setBookingDetails] = useState(null);
   const navigate = useNavigate();
 
-  
   useEffect(() => {
     const fetchLot = async () => {
       try {
@@ -37,7 +36,6 @@ function BookPage() {
     fetchLot();
   }, [lot_id]);
 
-  
   const handleBooking = async () => {
     if (!startTime || !endTime) {
       alert("Please select both start and end times before booking.");
@@ -59,7 +57,6 @@ function BookPage() {
     setBookingDetails(null);
 
     try {
-      // Format dates to match backend expected format: "YYYY-MM-DDTHH:MM"
       const formatDateTime = (date) => {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -81,7 +78,6 @@ function BookPage() {
       setBookingDetails(res.data.booking_summary);
       setBookingStatus("success");
 
-      // Redirect after 2 seconds to show success message, and switch to bookings tab
       setTimeout(() => {
         navigate("/dashboard?refresh=" + Date.now() + "&tab=bookings", { replace: true });
       }, 2000);
@@ -95,7 +91,6 @@ function BookPage() {
       setIsBooking(false);
     }
   };
-
 
   if (loading)
     return (
@@ -111,16 +106,15 @@ function BookPage() {
       </Alert>
     );
 
-  
   return (
     <div className="book-page">
       <Container className="d-flex justify-content-center align-items-center">
         <Card className="book-card shadow-lg p-5">
           <Card.Body>
             <div className="text-center mb-4">
-              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🅿️</div>
+              <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>P</div>
               <Card.Title>{lot.lot_name}</Card.Title>
-              <Card.Text className="text-muted">📍 {lot.location}</Card.Text>
+              <Card.Text className="text-muted">{lot.location}</Card.Text>
               <div className="mt-3 mb-3">
                 <Badge bg="info" className="me-2">
                   Available: {lot.available_spots} / {lot.total_spots}
@@ -129,7 +123,6 @@ function BookPage() {
               </div>
             </div>
 
-            {/* Start & End Time Inputs */}
             <Form className="mt-4" onSubmit={(e) => { e.preventDefault(); handleBooking(); }}>
               <Form.Group className="mb-3">
                 <Form.Label>Start Time</Form.Label>
@@ -148,7 +141,7 @@ function BookPage() {
                     calendarClassName="dark-theme-calendar"
                     required
                   />
-                  <span className="calendar-icon">📅</span>
+                  <span className="calendar-icon">C</span>
                 </div>
               </Form.Group>
               <Form.Group className="mb-3">
@@ -168,7 +161,7 @@ function BookPage() {
                     calendarClassName="dark-theme-calendar"
                     required
                   />
-                  <span className="calendar-icon">📅</span>
+                  <span className="calendar-icon">C</span>
                 </div>
               </Form.Group>
             
@@ -202,7 +195,7 @@ function BookPage() {
 
             {bookingStatus === "success" && bookingDetails && (
               <Alert variant="success" className="mt-3">
-                <Alert.Heading>✅ Booking Successful!</Alert.Heading>
+                <Alert.Heading>Booking Successful!</Alert.Heading>
                 <hr />
                 <p className="mb-1"><strong>Total Cost:</strong> ₹{bookingDetails.total_cost}</p>
                 <p className="mb-1"><strong>Start Time:</strong> {new Date(bookingDetails.start_time).toLocaleString()}</p>
@@ -213,7 +206,7 @@ function BookPage() {
 
             {bookingStatus === "error" && bookingDetails && (
               <Alert variant="danger" className="mt-3">
-                <Alert.Heading>❌ Booking Failed</Alert.Heading>
+                <Alert.Heading>Booking Failed</Alert.Heading>
                 <p className="mb-0">{bookingDetails.error}</p>
               </Alert>
             )}

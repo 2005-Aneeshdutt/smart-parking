@@ -1,4 +1,3 @@
-# Create admin user
 from database import get_db
 import bcrypt
 
@@ -10,16 +9,13 @@ def create_admin():
     
     cursor = db.cursor()
     
-    # Check if admin already exists
     cursor.execute("SELECT * FROM users WHERE email = %s", ("admin@parking.com",))
     existing = cursor.fetchone()
     
     if existing:
-        # Update existing user to admin
         cursor.execute("UPDATE users SET role = 'admin' WHERE email = %s", ("admin@parking.com",))
         print("Updated existing user to admin role")
     else:
-        # Create new admin user
         password = "admin123"
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         
@@ -39,4 +35,3 @@ def create_admin():
 
 if __name__ == "__main__":
     create_admin()
-

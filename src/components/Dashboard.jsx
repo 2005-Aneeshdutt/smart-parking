@@ -28,11 +28,9 @@ function Dashboard() {
     if (!user?.user_id) return;
     try {
       const res = await axios.get(`http://127.0.0.1:8000/parking/bookings/${user.user_id}`);
-      console.log("Bookings fetched:", res.data.bookings);
       setBookings(res.data.bookings || []);
     } catch (err) {
-      console.error("Failed to load bookings:", err.response?.data || err.message);
-      setBookings([]); // Set empty array on error
+      setBookings([]);
     }
   };
 
@@ -43,13 +41,11 @@ function Dashboard() {
 
     try {
       await axios.put(`http://127.0.0.1:8000/parking/bookings/${reservationId}/cancel`);
-      // Refresh bookings and lots after cancellation
       await Promise.all([fetchBookings(), fetchLots()]);
       alert("Booking cancelled successfully!");
     } catch (err) {
       const errorMsg = err.response?.data?.detail || "Failed to cancel booking";
       alert(errorMsg);
-      console.error("Cancel booking error:", err);
     }
   };
 
@@ -61,15 +57,13 @@ function Dashboard() {
     };
     loadData();
     
-    // Check if tab is specified in URL
     const params = new URLSearchParams(location.search);
     const tabParam = params.get("tab");
     if (tabParam) {
       setActiveTab(tabParam);
     }
-  }, [user, location.search]); // Refresh when location changes (including query params)
+  }, [user, location.search]);
 
-  // Refresh data when component mounts or when navigating back
   useEffect(() => {
     const handleFocus = () => {
       fetchLots();
@@ -77,7 +71,6 @@ function Dashboard() {
     };
     window.addEventListener('focus', handleFocus);
     
-    // Also refresh when component becomes visible
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchLots();
@@ -114,7 +107,7 @@ function Dashboard() {
           <Row className="align-items-center">
             <Col>
               <h2 className="mb-0">
-                <span className="dashboard-icon">🅿️</span> Smart Parking System
+                <span className="dashboard-icon">P</span> Smart Parking System
               </h2>
               <p className="text-muted mb-0">Welcome, {user?.name || "User"}</p>
             </Col>
@@ -136,24 +129,22 @@ function Dashboard() {
       </div>
 
       <Container className="mt-4">
-        {/* Tabs */}
         <div className="mb-4 text-center">
           <Button
             variant={activeTab === "lots" ? "primary" : "outline-primary"}
             onClick={() => setActiveTab("lots")}
             className="me-2"
           >
-            🅿️ Parking Lots
+            Parking Lots
           </Button>
           <Button
             variant={activeTab === "bookings" ? "primary" : "outline-primary"}
             onClick={() => setActiveTab("bookings")}
           >
-            📅 My Bookings
+            My Bookings
           </Button>
         </div>
 
-        {/* Parking Lots Tab */}
         {activeTab === "lots" && (
           <>
             <Row className="mb-4">
@@ -187,7 +178,7 @@ function Dashboard() {
                     {lot.lot_name}
                   </Card.Title>
                   <Card.Text className="text-muted mb-3">
-                    <span>📍</span> <span>{lot.location}</span>
+                    <span>{lot.location}</span>
                   </Card.Text>
                   <div className="lot-info mb-3">
                     <div className="info-item">
@@ -219,13 +210,12 @@ function Dashboard() {
         </>
         )}
 
-        {/* My Bookings Tab */}
         {activeTab === "bookings" && (
           <Row>
             <Col>
               <Card className="shadow-lg">
                 <Card.Header>
-                  <h4 className="mb-0">📅 My Bookings</h4>
+                  <h4 className="mb-0">My Bookings</h4>
                 </Card.Header>
                 <Card.Body>
                   {bookings.length === 0 ? (
@@ -254,7 +244,6 @@ function Dashboard() {
                             const end = new Date(booking.end_time);
                             const hours = Math.ceil((end - start) / (1000 * 60 * 60));
                             const isActive = booking.status === "active";
-                            // Allow cancellation of any active booking (even if it has started)
                             const canCancel = isActive;
                             return (
                               <tr key={booking.reservation_id}>

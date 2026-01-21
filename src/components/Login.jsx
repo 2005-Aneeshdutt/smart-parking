@@ -2,12 +2,12 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Card, Form, Button, Alert, Spinner } from "react-bootstrap";
 import { useAuth } from "../context/AuthContext1";
-import { useNavigate } from "react-router-dom"; // ✅ add navigation
+import { useNavigate } from "react-router-dom";
 import "../styles/Login.css";
 
 function Login() {
   const { login } = useAuth();
-  const navigate = useNavigate(); // ✅ React Router hook for redirect
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [message, setMessage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -30,13 +30,9 @@ function Login() {
         role: res.data.role || "driver",
       };
 
-  
       login(userData);
-
-    
       setMessage({ type: "success", text: `Welcome ${res.data.name}!` });
 
-    
       const redirectPath = userData.role === "admin" ? "/admin" : "/dashboard";
       setTimeout(() => navigate(redirectPath), 1000);
     } catch (err) {
@@ -52,7 +48,7 @@ function Login() {
   return (
     <div className="login-container d-flex justify-content-center align-items-center">
       <Card className="login-card shadow-lg p-5">
-        <div className="login-icon">🅿️</div>
+        <div className="login-icon">P</div>
         <h3 className="text-center mb-4 text-primary">Smart Parking System</h3>
         <p className="text-center text-muted mb-4">Sign in to continue</p>
         <Form onSubmit={handleSubmit}>

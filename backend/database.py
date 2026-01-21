@@ -3,12 +3,10 @@ from mysql.connector import Error
 from dotenv import load_dotenv
 import os
 
-
 load_dotenv()
 
 def get_db():
     try:
-        # Use 127.0.0.1 instead of localhost to force TCP/IP connection on Windows
         host = os.getenv("DB_HOST", "localhost")
         if host == "localhost":
             host = "127.0.0.1"

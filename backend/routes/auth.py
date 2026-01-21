@@ -17,7 +17,6 @@ def login(req: LoginRequest):
     
     cursor = db.cursor(dictionary=True)
     try:
-        # Trim email to handle any whitespace issues
         email = req.email.strip()
         cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
         user = cursor.fetchone()
@@ -25,7 +24,6 @@ def login(req: LoginRequest):
         if not user:
             raise HTTPException(status_code=401, detail="User not found")
 
-        # Check password
         password_hash = user["password_hash"]
         if isinstance(password_hash, bytes):
             password_hash = password_hash.decode()

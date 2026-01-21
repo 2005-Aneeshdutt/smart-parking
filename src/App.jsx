@@ -1,4 +1,3 @@
-// src/App.jsx
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext1";
@@ -50,7 +49,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-          {/* Default route redirects to login */}
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Router>
